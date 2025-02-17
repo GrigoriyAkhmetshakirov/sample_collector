@@ -1,4 +1,5 @@
 import sys
+import os
 import socket
 import struct
 import csv
@@ -9,13 +10,15 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLa
 
 UDP_IP = '0.0.0.0'
 UDP_PORT = 49049
-CSV_FILE = 'data.csv'
+
+if not os.path.exists('data'):
+    os.mkdir('data')
+os.chdir('data')
 
 class UDPReceiver(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.csv_file = CSV_FILE
         self.is_receiving = False
         self.thread = None
 
@@ -28,10 +31,7 @@ class UDPReceiver(QWidget):
         layout = QVBoxLayout()
         self.setFixedSize(400, 600)
 
-        self.label = QLabel(f'Файл для сохранения: {self.csv_file}', self)
-        layout.addWidget(self.label)
-
-        self.label_type = QLabel(f'Тип купола', self)
+        self.label_type = QLabel(f'Тип купола:', self)
         layout.addWidget(self.label_type)
         self.combo_dome = QComboBox(self)
         self.combo_dome.addItems(['Type 1', 'Type 2', 'Type 3'])
@@ -58,19 +58,26 @@ class UDPReceiver(QWidget):
         self.is_receiving = True
         self.btn_start.setEnabled(False)
         self.btn_stop.setEnabled(True)
-
+        self.text_output.clear()
         self.thread = threading.Thread(target=self.receive_data)
         self.thread.start()
+        self.text_output.append(f'Запись в файл {self.file_name} начата') 
 
     def stop_receiving(self):
         '''Остановка приема UDP-пакетов'''
         self.is_receiving = False
         self.btn_start.setEnabled(True)
         self.btn_stop.setEnabled(False)
+        time.sleep(1)
+        self.text_output.clear()
+        self.text_output.append(f'Запись в файл {self.file_name} окончена') 
 
     def receive_data(self):
         '''Функция приема и записи данных'''
-        with open(self.csv_file, 'w', newline='') as file:
+
+        self.file_name = f'{time.strftime('%Y-%m-%d_%H:%M')}_data.csv'
+
+        with open(self.file_name , 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'Diag', 'System_type']) 
             print()
@@ -89,8 +96,6 @@ class UDPReceiver(QWidget):
                 message = f'{timestamp} recieved {num_pack} package'
                 self.text_output.append(message) 
                 print(message)
-
-        self.label.setText('Прием остановлен')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
