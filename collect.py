@@ -33,9 +33,15 @@ class UDPReceiver(QWidget):
 
         self.label_type = QLabel(f'Тип купола:', self)
         layout.addWidget(self.label_type)
-        self.combo_dome = QComboBox(self)
-        self.combo_dome.addItems(['Type 1', 'Type 2', 'Type 3'])
-        layout.addWidget(self.combo_dome)
+        self.combo_system = QComboBox(self)
+        self.combo_system.addItems(['Type 1', 'Type 2', 'Type 3'])
+        layout.addWidget(self.combo_system)
+
+        self.drone_type = QLabel(f'Тип дрона:', self)
+        layout.addWidget(self.drone_type)
+        self.combo_drone = QComboBox(self)
+        self.combo_drone.addItems(['DJI', 'Autel'])
+        layout.addWidget(self.combo_drone)
 
         self.btn_start = QPushButton('Начать сбор данных', self)
         self.btn_start.clicked.connect(self.start_receiving)
@@ -79,7 +85,7 @@ class UDPReceiver(QWidget):
 
         with open(self.file_name , 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'Diag', 'System_type']) 
+            writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'Diag', 'System_type', 'Drone_type']) 
             print()
             while self.is_receiving:
                 message, _ = self.socket.recvfrom(8200)
@@ -90,7 +96,7 @@ class UDPReceiver(QWidget):
                 num_win=int(np.frombuffer(message[8197:8198], dtype=np.uint8))
                 diag=int(np.frombuffer(message[8198:8199], dtype=np.uint8))
 
-                writer.writerow([*data, num_pack, num_ant, num_win, diag, self.combo_dome.currentText()])
+                writer.writerow([*data, num_pack, num_ant, num_win, diag, self.combo_system.currentText(), self.combo_drone.currentText()])
                 
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
                 message = f'{timestamp} recieved {num_pack} package'
