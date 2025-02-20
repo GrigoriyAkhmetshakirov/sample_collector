@@ -6,6 +6,8 @@ import csv
 import time
 import threading
 import numpy as np
+import datetime
+
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QComboBox, QTextEdit
 #твой адре 192.168.2.126, 255.255.255.0, 192.168.2.1 гейт
 UDP_IP = '192.168.2.126'
@@ -82,7 +84,8 @@ class UDPReceiver(QWidget):
     def receive_data(self):
         '''Функция приема и записи данных'''
 
-        self.file_name = f'data.csv'
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.file_name = f'data_{current_date}.csv'
 
         with open(self.file_name , 'w', newline='') as file:
             writer = csv.writer(file)
