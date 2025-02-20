@@ -81,7 +81,7 @@ class UDPReceiver(QWidget):
     def receive_data(self):
         '''Функция приема и записи данных'''
 
-        self.file_name = f'{time.strftime('%Y-%m-%d_%H:%M')}_data.csv'
+        self.file_name = f'data.csv'
 
         with open(self.file_name , 'w', newline='') as file:
             writer = csv.writer(file)
