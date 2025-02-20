@@ -7,8 +7,8 @@ import time
 import threading
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QComboBox, QTextEdit
-
-UDP_IP = '0.0.0.0'
+#твой адре 192.168.2.126, 255.255.255.0, 192.168.2.1 гейт
+UDP_IP = '192.168.2.126'
 UDP_PORT = 49049
 
 if not os.path.exists('data'):
@@ -24,6 +24,7 @@ class UDPReceiver(QWidget):
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((UDP_IP, UDP_PORT))
+        self.socket.sendto(bytes("STR\n", "ascii"), ("192.168.2.10", 5023))
 
         self.initUI()
 
@@ -81,12 +82,11 @@ class UDPReceiver(QWidget):
     def receive_data(self):
         '''Функция приема и записи данных'''
 
-        self.file_name = f'{time.strftime('%Y-%m-%d_%H:%M')}_data.csv'
+        self.file_name = f'data.csv'
 
         with open(self.file_name , 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'Diag', 'System_type', 'Drone_type']) 
-            print()
             while self.is_receiving:
                 message, _ = self.socket.recvfrom(8200)
                 data=np.frombuffer(message[:8192], dtype=np.float32)
@@ -101,6 +101,7 @@ class UDPReceiver(QWidget):
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
                 message = f'{timestamp} recieved {num_pack} package'
                 self.text_output.append(message) 
+                time.sleep(5)
                 print(message)
 
 if __name__ == '__main__':
