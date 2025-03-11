@@ -1,6 +1,6 @@
 import pandas as pd
 
-file_path = 'data/data_2025-03-03_14-54-03.csv'
+file_path = 'data/data_2025-03-06_16-16-37.csv'
 data = pd.read_csv(file_path)
 
 if 'Antenna' not in data.columns or 'Window' not in data.columns:

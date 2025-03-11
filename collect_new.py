@@ -29,7 +29,7 @@ else:
         "system_types": ["Type 1", "Type 2", "Type 3"],
         "sleep_time": 1,
         "window_size": [400, 600],
-        "PATH":'C:\\Python_Projects\\sample_collector\\gr2.py'
+        # "PATH":'C:\\Python_Projects\\sample_collector\\gr2.py'
     }
 
 UDP_IP = config["udp_ip"]
@@ -40,7 +40,7 @@ DRONE_TYPES = config["drone_types"]
 SYSTEM_TYPES = config["system_types"]
 SLEEP_TIME = config["sleep_time"]
 WINDOW_WIDTH, WINDOW_HEIGHT = config["window_size"]
-PATH=config['PATH']
+PATH = os.path.join(os.getcwd(), 'gr2.py')
 
 if not os.path.exists('data'):
     os.mkdir('data')
@@ -209,10 +209,10 @@ class UDPReceiver(QWidget):
                 message, _ = self.socket.recvfrom(8200)
                 data = np.frombuffer(message[:8192], dtype=np.float32)
                 data = [data[x] for x in range(len(data))]
-                num_pack = int(np.frombuffer(message[8192:8196], dtype=np.uint32))
-                num_ant = int(np.frombuffer(message[8196:8197], dtype=np.uint8))
-                num_win = int(np.frombuffer(message[8197:8198], dtype=np.uint8))
-                diag = int(np.frombuffer(message[8198:8199], dtype=np.uint8))
+                num_pack = np.frombuffer(message[8192:8196], dtype=np.uint32)[0]
+                num_ant = np.frombuffer(message[8196:8197], dtype=np.uint8)[0]
+                num_win = np.frombuffer(message[8197:8198], dtype=np.uint8)[0]
+                diag = np.frombuffer(message[8198:8199], dtype=np.uint8)[0]
                 writer.writerow([*data, num_pack, num_ant, num_win, diag, self.combo_system.currentText(), self.combo_drone.currentText()])
 
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')

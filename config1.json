@@ -6,6 +6,5 @@
     "drone_types": ["DJI", "Autel"],
     "system_types": ["Type 1", "Type 2", "Type 3"],
     "sleep_time": 0.01,
-    "window_size": [800, 2000],
-    "PATH": "C:\\Python_Projects\\sample_collector\\gr2.py"
+    "window_size": [800, 800]
 }
