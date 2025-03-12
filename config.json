@@ -1,7 +1,7 @@
 {
     "udp_ip": "127.0.0.1",
     "udp_port": 49049,
-    "send_to_ip": "127.0.0.2",
+    "send_to_ip": "127.0.0.1",
     "send_to_port": 5023,
     "drone_types": ["DJI", "Autel"],
     "system_types": ["Type 1", "Type 2", "Type 3"],

@@ -203,23 +203,22 @@ class UDPReceiver(QWidget):
 
         with open(self.file_name, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'Diag', 'System_type', 'Drone_type'])
+            writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'Diag', 'System_type', 'Drone_type', 'Timestamp'])
             while self.is_receiving:
 
                 message, _ = self.socket.recvfrom(8200)
                 data = np.frombuffer(message[:8192], dtype=np.float32)
-                data = [data[x] for x in range(len(data))]
                 num_pack = np.frombuffer(message[8192:8196], dtype=np.uint32)[0]
                 num_ant = np.frombuffer(message[8196:8197], dtype=np.uint8)[0]
                 num_win = np.frombuffer(message[8197:8198], dtype=np.uint8)[0]
                 diag = np.frombuffer(message[8198:8199], dtype=np.uint8)[0]
-                writer.writerow([*data, num_pack, num_ant, num_win, diag, self.combo_system.currentText(), self.combo_drone.currentText()])
 
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-                message = f'{timestamp} received {num_pack} package num_ant= {num_ant} num_win= {num_win}'
-                self.text_output.append(message)
+                writer.writerow([*[data[x] for x in range(len(data))], num_pack, num_ant, num_win, diag, self.combo_system.currentText(), self.combo_drone.currentText(), timestamp])
+                message_info = f'{timestamp} received {num_pack} package num_ant= {num_ant} num_win= {num_win}'
+                # self.text_output.append(message)
                 time.sleep(SLEEP_TIME)  # Используем значение из config.json
-                print(message)
+                print(message_info)
 
                 # Если это первый пакет с num_win=1, начинаем контроль
                 if num_win == 1 and expected_win is None:
