@@ -23,7 +23,7 @@ else:
         "selected_antenna": 1,
         "selected_window": 1,
         "antenna_list": [1],
-        "window_list": [1, 2]
+        "window_list": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
     }
 
 UDP_IP = config["udp_ip"]
@@ -34,8 +34,6 @@ DRONE_TYPES = config["drone_types"]
 SYSTEM_TYPES = config["system_types"]
 SLEEP_TIME = config["sleep_time"]
 WINDOW_WIDTH, WINDOW_HEIGHT = config["window_size"]
-# ANTENNA = config["selected_antenna"]
-# WINDOW = config["selected_window"]
 ANTENNA_LIST = config["antenna_list"]
 WINDOW_LIST = config["window_list"]
 
@@ -57,13 +55,10 @@ def get_and_parse_message():
 
 plt.ion()
 
-num_rows = len(ANTENNA_LIST)
-num_cols = len(WINDOW_LIST)
+num_rows = 3  # Количество строк
+num_cols = 7  # Количество столбцов
 
-fig, axes = plt.subplots(num_rows,
-                         num_cols, 
-                        #  figsize=(WINDOW_WIDTH/100, WINDOW_HEIGHT/100)
-)
+fig, axes = plt.subplots(num_rows, num_cols, figsize=(20, 5))
 fig.canvas.manager.set_window_title('Data Visualizer')
 plt.tight_layout()
 
@@ -71,16 +66,8 @@ plt.tight_layout()
 lines = {}
 for ant_idx, ant in enumerate(ANTENNA_LIST):
     for win_idx, win in enumerate(WINDOW_LIST):
-        if num_rows == 1 and num_cols == 1:
-            ax = axes 
-        elif num_rows == 1:
-            ax = axes[win_idx]
-        elif num_cols == 1:
-            ax = axes[ant_idx] 
-        else:
-            ax = axes[ant_idx, win_idx]
-
-        ax.set_title(f'Antenna {ant}, Window {win}')
+        ax = axes[win_idx // num_cols, win_idx % num_cols]
+        ax.set_title(f'Window {win}')
         ax.set_xlabel('Index')
         ax.set_ylabel('Value')
         ax.set_xlim(0, 2047) 
