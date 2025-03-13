@@ -3,7 +3,7 @@ import struct
 import time
 import numpy as np
 
-UDP_IP = '127.0.0.1'
+UDP_IP = "127.0.0.1"
 UDP_PORT = 49049
 SEND_INTERVAL = 0.05  # Интервал отправки
 num_ant_qnt=8
