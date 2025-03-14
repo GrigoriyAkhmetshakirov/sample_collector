@@ -3,10 +3,25 @@
     "udp_port": 49049,
     "send_to_ip": "127.0.0.1",
     "send_to_port": 5023,
-    "drone_types": ["DJI", "Autel"],
-    "system_types": ["Type 1", "Type 2", "Type 3"],
-    "sleep_time": 0.00001,
-    "window_size": [800, 800],
-    "antenna_list": [1],
-    "window_list": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    "drone_types": [
+        "DJI",
+        "Autel"
+    ],
+    "system_types": [
+        "Type 1",
+        "Type 2",
+        "Type 3"
+    ],
+    "sleep_time": 1e-05,
+    "window_size": [
+        30,
+        5
+    ],
+    "antenna_list": [
+        1
+    ],
+    "window_list": [
+        2,
+        1
+    ]
 }

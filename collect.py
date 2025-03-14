@@ -17,17 +17,7 @@ if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "r") as f:
         config = json.load(f)
 else:
-    print(f"Файл {CONFIG_FILE} не найден! Используются стандартные значения.")
-    config = {
-        "udp_ip": "192.168.2.126",
-        "udp_port": 49049,
-        "send_to_ip": "192.168.2.10",
-        "send_to_port": 5023,
-        "drone_types": ["DJI", "Autel"],
-        "system_types": ["Type 1", "Type 2", "Type 3"],
-        "sleep_time": 5,
-        "window_size": [400, 600]
-    }
+    print(f'Файл {CONFIG_FILE} не найден!')
 
 UDP_IP = config["udp_ip"]
 UDP_PORT = config["udp_port"]
@@ -57,18 +47,18 @@ class UDPReceiver(QWidget):
 
     def initUI(self):
         layout = QVBoxLayout()
-        self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)  # Размер окна из config.json
+        self.setFixedSize(500, 500)
 
         self.label_type = QLabel(f'Тип купола:', self)
         layout.addWidget(self.label_type)
         self.combo_system = QComboBox(self)
-        self.combo_system.addItems(SYSTEM_TYPES)  # Загружаем из config.json
+        self.combo_system.addItems(SYSTEM_TYPES)
         layout.addWidget(self.combo_system)
 
         self.drone_type = QLabel(f'Тип дрона:', self)
         layout.addWidget(self.drone_type)
         self.combo_drone = QComboBox(self)
-        self.combo_drone.addItems(DRONE_TYPES)  # Загружаем из config.json
+        self.combo_drone.addItems(DRONE_TYPES)
         layout.addWidget(self.combo_drone)
 
         self.btn_start = QPushButton('Начать сбор данных', self)

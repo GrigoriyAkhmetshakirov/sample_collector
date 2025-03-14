@@ -19,7 +19,7 @@ else:
         "drone_types": ["DJI", "Autel"],
         "system_types": ["Type 1", "Type 2", "Type 3"],
         "sleep_time": 1,
-        "window_size": [400, 600],
+        "window_size": [20, 5],
         "selected_antenna": 1,
         "selected_window": 1,
         "antenna_list": [1],
@@ -58,7 +58,7 @@ plt.ion()
 num_rows = 3  # Количество строк
 num_cols = 7  # Количество столбцов
 
-fig, axes = plt.subplots(num_rows, num_cols, figsize=(20, 5))
+fig, axes = plt.subplots(num_rows, num_cols, figsize=(WINDOW_WIDTH, WINDOW_HEIGHT))
 fig.canvas.manager.set_window_title('Data Visualizer')
 plt.tight_layout()
 
@@ -68,8 +68,8 @@ for ant_idx, ant in enumerate(ANTENNA_LIST):
     for win_idx, win in enumerate(WINDOW_LIST):
         ax = axes[win_idx // num_cols, win_idx % num_cols]
         ax.set_title(f'Window {win}')
-        ax.set_xlabel('Index')
-        ax.set_ylabel('Value')
+        # ax.set_xlabel('Index')
+        # ax.set_ylabel('Value')
         ax.set_xlim(0, 2047) 
         ax.set_ylim(-100, 10)
         line, = ax.plot([], [])
