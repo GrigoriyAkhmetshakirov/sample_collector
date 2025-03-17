@@ -13,15 +13,15 @@ import datetime
 CONFIG_FILE = 'config.json'
 
 if os.path.exists(CONFIG_FILE):
-    with open(CONFIG_FILE, "r") as f:
+    with open(CONFIG_FILE, 'r') as f:
         config = json.load(f)
 else:
-    print('Config file not exist!')
+    print('Config file is not exist!')
 
 if not os.path.exists('data'):
     os.mkdir('data')
 
-DOME_CONFIGS = {
+FREQ_CONFIGS = {
     'Type 1': {
         1: {'central': 420, 'range': 20},
         2: {'central': 460, 'range': 20},
@@ -88,7 +88,7 @@ class UdpWorker(QtCore.QObject):
         super().__init__()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((config['udp_ip'], config['udp_port']))
-        self.sock.sendto(b"STR\n", (config['send_to_ip'], config['send_to_port']))
+        self.sock.sendto(b'STR\n', (config['send_to_ip'], config['send_to_port']))
         self.running = True
 
     def run(self):
@@ -101,7 +101,7 @@ class UdpWorker(QtCore.QObject):
                 num_win = np.frombuffer(message[8197:8198], dtype=np.uint8)[0]
                 self.data_received.emit(data, num_pack, num_ant, num_win)
             except Exception as e:
-                print(f"Ошибка при получении данных: {e}")
+                print(f'Ошибка при получении данных: {e}')
 
     def stop(self):
         self.running = False
@@ -110,15 +110,15 @@ class UdpWorker(QtCore.QObject):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, config):
         super().__init__()
-        self.config = config
         self.xdata_map = {}
         self.lines = {}
         self.canvases = {}
-        self.checkboxes = {}
+        self.canvas_size = config.get('canvas_size')
         self.initUI()
         self.initUdp()
         self.is_writing = False
         self.file = None
+
         
     def initUI(self):
         self.setGeometry(150, 150, 1600, 800)
@@ -138,15 +138,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.label_type = QLabel(f'Тип купола:', self)
         control_layout.addWidget(self.label_type)
         self.combo_system = QComboBox(self)
-        self.combo_system.addItems(self.config.get('system_types', []))
+        self.combo_system.addItems(config.get('system_types', []))
         self.combo_system.currentTextChanged.connect(self.update_frequency_config)
         control_layout.addWidget(self.combo_system)
-        self.FREQUENCY_CONFIG = DOME_CONFIGS[self.combo_system.currentText()]
+        self.FREQUENCY_CONFIG = FREQ_CONFIGS[self.combo_system.currentText()]
 
         self.drone_type = QLabel(f'Тип дрона:', self)
         control_layout.addWidget(self.drone_type)
         self.combo_drone = QComboBox(self)
-        self.combo_drone.addItems(self.config.get('drone_types', []))
+        self.combo_drone.addItems(config.get('drone_types', []))
         control_layout.addWidget(self.combo_drone)
 
         self.btn_start = QPushButton('Начать сбор данных', self)
@@ -159,7 +159,7 @@ class MainWindow(QtWidgets.QMainWindow):
         control_layout.addWidget(self.btn_stop)
 
         # Чекбокс присутствия дрона
-        self.drone_present_cb = QtWidgets.QCheckBox("Дрон присутствует", self)
+        self.drone_present_cb = QtWidgets.QCheckBox('Дрон присутствует', self)
         control_layout.addWidget(self.drone_present_cb)
         
         main_layout.addWidget(control_panel, alignment=QtCore.Qt.AlignTop)
@@ -187,11 +187,8 @@ class MainWindow(QtWidgets.QMainWindow):
         scroll.setWidget(plot_container)
         right_layout.addWidget(scroll)
         
-        self.fig_size = (3, 3)
-        self.canvas_size = (300, 300)
-        
         for win_num in self.FREQUENCY_CONFIG:
-            fig = Figure(figsize=self.fig_size)
+            fig = Figure()
             canvas = FigureCanvas(fig)
             canvas.setFixedSize(*self.canvas_size)
             ax = fig.add_subplot(111)
@@ -206,10 +203,10 @@ class MainWindow(QtWidgets.QMainWindow):
             line, = ax.plot([], [])
             self.lines[win_num] = line
             self.canvases[win_num] = canvas
-            row = (win_num - 1) // 3
-            col = (win_num - 1) % 3
+            row = (win_num - 1) // config.get('grid')
+            col = (win_num - 1) % config.get('grid')
             self.plot_layout.addWidget(canvas, row, col)
-            canvas.setVisible(win_num in self.config['window_list'])
+            canvas.setVisible(win_num in config['window_list'])
 
         self.plot_layout.setRowStretch(self.plot_layout.rowCount(), 1)
         self.plot_layout.setColumnStretch(self.plot_layout.columnCount(), 1)
@@ -221,7 +218,7 @@ class MainWindow(QtWidgets.QMainWindow):
         main_layout.addLayout(right_layout)
 
     def update_frequency_config(self):
-        self.FREQUENCY_CONFIG = DOME_CONFIGS[self.combo_system.currentText()]
+        self.FREQUENCY_CONFIG = FREQ_CONFIGS[self.combo_system.currentText()]
         self.update_checkboxes() 
         self.rebuild_plots()
         self.update_plot_titles()
@@ -232,8 +229,8 @@ class MainWindow(QtWidgets.QMainWindow):
             del self.checkboxes[win_num]
         for win_num in self.FREQUENCY_CONFIG:
             cfg = self.FREQUENCY_CONFIG[win_num]
-            cb = QtWidgets.QCheckBox(f"{cfg['central']} МГц")
-            cb.setChecked(win_num in self.config['window_list'])
+            cb = QtWidgets.QCheckBox(f'{cfg['central']} МГц')
+            cb.setChecked(win_num in config['window_list'])
             cb.stateChanged.connect(lambda state, wn=win_num: self.toggle_window(wn, state))
             self.checkboxes_layout.addWidget(cb)
             self.checkboxes[win_num] = cb
@@ -260,7 +257,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Создаем новые графики
         for win_num in self.FREQUENCY_CONFIG:
-            fig = Figure(figsize=self.fig_size)
+            fig = Figure()
             canvas = FigureCanvas(fig)
             canvas.setFixedSize(*self.canvas_size)
             ax = fig.add_subplot(111)
@@ -275,10 +272,10 @@ class MainWindow(QtWidgets.QMainWindow):
             line, = ax.plot([], [])
             self.lines[win_num] = line
             self.canvases[win_num] = canvas
-            row = (win_num - 1) // 3
-            col = (win_num - 1) % 3
+            row = (win_num - 1) // config.get('grid')
+            col = (win_num - 1) % config.get('grid')
             self.plot_layout.addWidget(canvas, row, col)
-            canvas.setVisible(win_num in self.config['window_list'])
+            canvas.setVisible(win_num in config['window_list'])
 
         self.update_plot_layout()
 
@@ -288,35 +285,35 @@ class MainWindow(QtWidgets.QMainWindow):
             if widget:
                 self.plot_layout.removeWidget(widget)
         active_windows = sorted(
-            [win for win in self.config['window_list'] if win in self.canvases],
+            [win for win in config['window_list'] if win in self.canvases],
             key=lambda win: self.FREQUENCY_CONFIG[win]['central']
         )
         for index, win_num in enumerate(active_windows):
-            row = index // 3
-            col = index % 3
+            row = index // config.get('grid')
+            col = index % config.get('grid')
             self.plot_layout.addWidget(self.canvases[win_num], row, col)
             self.canvases[win_num].setVisible(True)
 
     def disable_all_windows(self):
         for win_num, cb in self.checkboxes.items():
             cb.setChecked(False)
-        self.config['window_list'].clear()
+        config['window_list'].clear()
         for canvas in self.canvases.values():
             canvas.setVisible(False)
 
     def toggle_window(self, win_num, state):
         if state == QtCore.Qt.Checked:
-            if win_num not in self.config['window_list']:
-                self.config['window_list'].append(win_num)
+            if win_num not in config['window_list']:
+                config['window_list'].append(win_num)
         else:
-            if win_num in self.config['window_list']:
-                self.config['window_list'].remove(win_num)
+            if win_num in config['window_list']:
+                config['window_list'].remove(win_num)
         self.canvases[win_num].setVisible(state == QtCore.Qt.Checked)
         self.update_plot_layout()
 
     def initUdp(self):
         self.udp_thread = QtCore.QThread()
-        self.udp_worker = UdpWorker(self.config)
+        self.udp_worker = UdpWorker(config)
         self.udp_worker.moveToThread(self.udp_thread)
         self.udp_thread.started.connect(self.udp_worker.run)
         self.udp_worker.data_received.connect(self.get_data_update_plot)
@@ -326,7 +323,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_start.setEnabled(False)
         self.btn_stop.setEnabled(True)
         self.is_writing = True
-        current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         self.file = open(f'data/data_{current_date}.csv', 'w')
         self.writer = csv.writer(self.file)
         self.writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'System_type', 'Drone_type', 'Drone_is_present', 'Timestamp'])
@@ -339,8 +336,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def get_data_update_plot(self, data, num_pack, num_ant, num_win):
         if self.is_writing:
-            self.writer.writerow([*data, num_pack, num_ant, num_win, self.combo_system.currentText(), self.combo_drone.currentText(), int(self.drone_present_cb.isChecked()), datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")])
-        if num_ant in self.config['antenna_list'] and num_win in self.config['window_list']:
+            self.writer.writerow([*data, num_pack, num_ant, num_win, self.combo_system.currentText(), self.combo_drone.currentText(), int(self.drone_present_cb.isChecked()), datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')])
+        if num_ant in config['antenna_list'] and num_win in config['window_list']:
             if num_win in self.lines:
                 xdata = self.xdata_map[num_win]
                 self.lines[num_win].set_data(xdata, data)
