@@ -3,6 +3,30 @@
     "udp_port": 49049,
     "send_to_ip": "127.0.0.1",
     "send_to_port": 5023,
+    "avg": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16"
+    ],
+    "window_type": [
+        "HANN",
+        "HAMM",
+        "BLACK",
+        "BLHR"
+    ],
     "grid": 3,
     "canvas_size": [
         300,
@@ -25,5 +49,9 @@
     "antenna_list": [
         1
     ],
-    "window_list": []
+    "window_list": [
+        4,
+        10,
+        6
+    ]
 }

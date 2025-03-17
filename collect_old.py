@@ -9,8 +9,6 @@ import numpy as np
 import datetime
 import json
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QComboBox, QTextEdit
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 # Загружаем конфиг из JSON
 CONFIG_FILE = "config.json"
@@ -19,17 +17,7 @@ if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "r") as f:
         config = json.load(f)
 else:
-    print(f"Файл {CONFIG_FILE} не найден! Используются стандартные значения.")
-    config = {
-        "udp_ip": "192.168.2.126",
-        "udp_port": 49049,
-        "send_to_ip": "192.168.2.10",
-        "send_to_port": 5023,
-        "drone_types": ["DJI", "Autel"],
-        "system_types": ["Type 1", "Type 2", "Type 3"],
-        "sleep_time": 0.5,  # Полсекунды задержка
-        "window_size": [800, 600]
-    }
+    print(f'Файл {CONFIG_FILE} не найден!')
 
 UDP_IP = config["udp_ip"]
 UDP_PORT = config["udp_port"]
@@ -44,22 +32,22 @@ if not os.path.exists('data'):
     os.mkdir('data')
 os.chdir('data')
 
-
 class UDPReceiver(QWidget):
     def __init__(self):
         super().__init__()
 
         self.is_receiving = False
         self.thread = None
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((UDP_IP, UDP_PORT))
-        self.socket.sendto(bytes("STR\n", "ascii"), (SEND_TO_IP, SEND_TO_PORT))
+        # self.socket.sendto(bytes("STR\n", "ascii"), (SEND_TO_IP, SEND_TO_PORT))
 
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout()
-        self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.setFixedSize(500, 500)
 
         self.label_type = QLabel(f'Тип купола:', self)
         layout.addWidget(self.label_type)
@@ -82,24 +70,12 @@ class UDPReceiver(QWidget):
         self.btn_stop.setEnabled(False)
         layout.addWidget(self.btn_stop)
 
-        # Матplotlib canvas для графика
-        self.fig, self.ax = plt.subplots()
-        self.canvas = FigureCanvas(self.fig)
-        layout.addWidget(self.canvas)
-
         self.text_output = QTextEdit(self)
         self.text_output.setReadOnly(True)
         layout.addWidget(self.text_output)
 
         self.setLayout(layout)
         self.setWindowTitle('UDP Receiver')
-
-        # Данные для графика
-        self.data_x = []  # Индекс пакетов
-        self.data_y = []  # Значения сигнала
-
-        # Счетчик для индекса
-        self.index = 0
 
     def start_receiving(self):
         '''Запуск приема UDP-пакетов'''
@@ -109,6 +85,7 @@ class UDPReceiver(QWidget):
         self.text_output.clear()
         self.thread = threading.Thread(target=self.receive_data)
         self.thread.start()
+        self.text_output.append(f'Запись в файл {self.file_name} начата')
 
     def stop_receiving(self):
         '''Остановка приема UDP-пакетов'''
@@ -117,44 +94,32 @@ class UDPReceiver(QWidget):
         self.btn_stop.setEnabled(False)
         time.sleep(1)
         self.text_output.clear()
+        self.text_output.append(f'Запись в файл {self.file_name} окончена')
 
     def receive_data(self):
         '''Функция приема и записи данных'''
-        while self.is_receiving:
-            message, _ = self.socket.recvfrom(8200)
-            data = np.frombuffer(message[:8192], dtype=np.float32)
+        current_date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.file_name = f'data_{current_date}.csv'
 
-            # Здесь пример использования данных для построения графика
-            signal_strength = np.mean(data)  # Например, используем среднее значение как "сигнал"
+        with open(self.file_name, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['data' + str([x]) for x in range(2048)] + ['Num Pack', 'Antenna', 'Window', 'Diag', 'System_type', 'Drone_type'])
+            while self.is_receiving:
+                message, _ = self.socket.recvfrom(8200)
+                data = np.frombuffer(message[:8192], dtype=np.float32)
+                data = [data[x] for x in range(len(data))]
+                num_pack = np.frombuffer(message[8192:8196], dtype=np.uint32)[0]
+                num_ant = np.frombuffer(message[8196:8197], dtype=np.uint8)[0]
+                num_win = np.frombuffer(message[8197:8198], dtype=np.uint8)[0]
+                diag = np.frombuffer(message[8198:8199], dtype=np.uint8)[0]
 
-            # Добавляем данные на график
-            self.data_x.append(self.index)
-            self.data_y.append(signal_strength)
+                writer.writerow([*data, num_pack, num_ant, num_win, diag, self.combo_system.currentText(), self.combo_drone.currentText()])
 
-            # Ограничиваем количество точек, чтобы график не разрастался
-            if len(self.data_x) > 100:
-                self.data_x.pop(0)
-                self.data_y.pop(0)
-
-            # Обновляем график (столбчатый график)
-            self.ax.clear()
-            self.ax.bar(self.data_x, self.data_y)
-            self.ax.set_xlabel("Пакет")
-            self.ax.set_ylabel("Сила сигнала")
-            self.ax.set_title("Изменение силы сигнала в реальном времени")
-            self.canvas.draw()
-
-            # Обновляем текстовое сообщение
-            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            message = f'{timestamp} Signal Strength: {signal_strength:.2f}'
-            self.text_output.append(message)
-
-            # Увеличиваем индекс для оси X
-            self.index += 1
-
-            # Добавляем задержку в 0.5 секунды
-            time.sleep(SLEEP_TIME)
-
+                timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+                message = f'{timestamp} received {num_pack} package'
+                self.text_output.append(message)
+                time.sleep(SLEEP_TIME)  # Используем значение из config.json
+                print(message)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
