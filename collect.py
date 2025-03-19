@@ -5,7 +5,7 @@ import socket
 import csv
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QVBoxLayout
+from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QVBoxLayout, QMessageBox
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import datetime
@@ -207,6 +207,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_send_configs.clicked.connect(self.send_configs_to_dome)
         control_layout.addWidget(self.btn_send_configs, alignment=QtCore.Qt.AlignTop)
 
+        # Добавляем кнопку очистки
+        self.btn_clear = QPushButton('Очистить каталог', self)
+        self.btn_clear.clicked.connect(self.clear_directory)
+        control_layout.addWidget(self.btn_clear)
+
         main_layout.addWidget(control_panel, alignment=QtCore.Qt.AlignTop)
 
         # Элементы управления окнами
@@ -406,6 +411,39 @@ class MainWindow(QtWidgets.QMainWindow):
             + self.combo_window_type.currentText() + ' ' \
             + self.combo_avg.currentText()
         self.udp_worker.send_command(command)
+
+    def clear_directory(self):
+        files = os.listdir('data')
+        if not files:
+            QMessageBox.information(self, "Информация", "Каталог пуст")
+            return
+ 
+        message = f"Вы уверены, что хотите удалить все файлы из каталога?\n\n" \
+                f"Файлы для удаления:\n" + "\n".join(files)
+ 
+        reply = QMessageBox.question(
+            self,
+            "Подтверждение удаления",
+            message,
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            try:
+                for file in files:
+                    os.remove(os.path.join(os.getcwd(), 'data', file))
+                QMessageBox.information(
+                    self,
+                    "Успешно",
+                    "Все файлы успешно удалены"
+                )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Ошибка",
+                    f"Произошла ошибка при удалении файлов: {str(e)}"
+                )
 
     def closeEvent(self, event):
         self.file.close() if self.file is not None else None
