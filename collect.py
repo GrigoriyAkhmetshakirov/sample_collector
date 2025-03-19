@@ -30,7 +30,7 @@ if not os.path.exists('data'):
     os.mkdir('data')
 
 FREQ_CONFIGS = {
-    'Type 1': {
+    f'{config.get("system_types")[0]}': {
         1: {'central': 420, 'range': 20},
         2: {'central': 460, 'range': 20},
         3: {'central': 715, 'range': 20},
@@ -53,7 +53,7 @@ FREQ_CONFIGS = {
         20: {'central': 5920, 'range': 20},
         21: {'central': 6950, 'range': 20},
     },
-    'Type 2': {
+    f'{config.get("system_types")[1]}': {
         1: {'central': 420, 'range': 20},
         2: {'central': 460, 'range': 20},
         3: {'central': 880, 'range': 20},
@@ -67,7 +67,7 @@ FREQ_CONFIGS = {
         11: {'central': 5800, 'range': 20},
         12: {'central': 5840, 'range': 20},
     },
-    'Type 3': {
+    f'{config.get("system_types")[2]}': {
         1: {'central': 420, 'range': 20},
         2: {'central': 460, 'range': 20},
         3: {'central': 880, 'range': 20},
@@ -139,7 +139,6 @@ class UdpWorker(QtCore.QObject):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, config):
         super().__init__()
-        self.dome_type = 'Type 1'
         self.xdata_map = {}
         self.lines = {}
         self.canvases = {}
@@ -148,6 +147,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initUdp()
         self.is_writing = False
         self.file = None
+        self.iter = config.get('iters') # Счетчик частоты записи данных в файл
 
     def initUI(self):
         self.setGeometry(150, 150, 1600, 800)
@@ -214,6 +214,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.checkboxes_layout = QtWidgets.QVBoxLayout()
         checkbox_panel.setLayout(self.checkboxes_layout)
 
+        enable_all_btn = QtWidgets.QPushButton('Включить все окна')
+        enable_all_btn.clicked.connect(self.enable_all_windows)
+        self.checkboxes_layout.addWidget(enable_all_btn)
+
         disable_all_btn = QtWidgets.QPushButton('Выключить все окна')
         disable_all_btn.clicked.connect(self.disable_all_windows)
         self.checkboxes_layout.addWidget(disable_all_btn)
@@ -274,7 +278,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 ax.figure.canvas.draw() 
 
     def rebuild_plots(self):
-        # Очищаем старые графики
         for win_num in list(self.lines.keys()):
             self.plot_layout.removeWidget(self.canvases[win_num])
             self.canvases[win_num].deleteLater()
@@ -282,7 +285,6 @@ class MainWindow(QtWidgets.QMainWindow):
             del self.canvases[win_num]
             del self.xdata_map[win_num]
 
-        # Создаем новые графики
         for win_num in self.FREQUENCY_CONFIG:
             fig = Figure()
             canvas = FigureCanvas(fig)
@@ -320,6 +322,13 @@ class MainWindow(QtWidgets.QMainWindow):
             col = index % config.get('grid')
             self.plot_layout.addWidget(self.canvases[win_num], row, col)
             self.canvases[win_num].setVisible(True)
+    
+    def enable_all_windows(self):
+        for win_num, cb in self.checkboxes.items():
+            cb.setChecked(True)
+        # config['window_list'].clear()
+        for canvas in self.canvases.values():
+            canvas.setVisible(True)
 
     def disable_all_windows(self):
         for win_num, cb in self.checkboxes.items():
@@ -364,8 +373,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.file.close()
 
     def get_data_update_plot(self, data, num_pack, num_ant, num_win):
-        if self.is_writing and len(data) == 2048:
+        if self.is_writing and len(data) == 2048 and (self.iter % config.get('iters')) == 0:
             self.writer.writerow([*data, np.mean(data), num_pack, num_ant, num_win, self.combo_system.currentText(), self.combo_drone.currentText(), int(self.drone_present_cb.isChecked()), datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')])
+            self.iter = 0
+        self.iter += 1
         if num_ant in config['antenna_list'] and num_win in config['window_list']:
             if num_win in self.lines:
                 xdata = self.xdata_map[num_win]
@@ -379,9 +390,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_start.setEnabled(True)
         self.btn_stop.setEnabled(False)
 
-        if self.dome_type == 'Type 1':
+        if self.dome_type == f'{config.get("system_types")[0]}':
             command = '2097151'
-        elif self.dome_type == 'Type 2':
+        elif self.dome_type == f'{config.get("system_types")[1]}':
             command = '4095'
         else:
             command = '262143'
