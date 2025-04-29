@@ -51,7 +51,7 @@ FREQ_CONFIGS = {
         18: {'central': 5840, 'range': 20},
         19: {'central': 5880, 'range': 20},
         20: {'central': 5920, 'range': 20},
-        21: {'central': 6950, 'range': 20},
+        21: {'central': 5960, 'range': 20},
     },
     f'{config.get("system_types")[1]}': {
         1: {'central': 420, 'range': 20},
