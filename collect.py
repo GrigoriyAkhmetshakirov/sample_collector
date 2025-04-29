@@ -207,7 +207,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.btn_send_configs.clicked.connect(self.send_configs_to_dome)
         control_layout.addWidget(self.btn_send_configs, alignment=QtCore.Qt.AlignTop)
 
-        # Добавляем кнопку очистки
+        # Кнопка очистки
         self.btn_clear = QPushButton('Очистить каталог', self)
         self.btn_clear.clicked.connect(self.clear_directory)
         control_layout.addWidget(self.btn_clear)
